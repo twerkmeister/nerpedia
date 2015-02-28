@@ -25,3 +25,5 @@ src/main/scala/rebel.xml
 *.zip
 *.skp
 *.mtl
+
+categoryIndices/
