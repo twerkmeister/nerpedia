@@ -1,6 +1,8 @@
 package com.twerkmeister.nerpedia.models
 
-import scala.concurrent.Future
+import scala.concurrent._
+import scala.concurrent.duration._
+import ExecutionContext.Implicits.global._
 import com.websudos.phantom.dsl._
 
 case class Category(name: String, page: String)
@@ -19,12 +21,12 @@ class Categories extends CassandraTable[Categories, Category] {
 }
 
 object Categories extends Categories with Connector {
+  Await.ready(Categories.create.ifNotExists().future(), 3 seconds)
 
   def store(category: Category): Future[ResultSet] = {
     insert
       .value(_.name, category.name)
       .value(_.page, category.page)
-      .consistencyLevel_=(ConsistencyLevel.ALL)
       .future()
   }
 
@@ -35,4 +37,5 @@ object Categories extends Categories with Connector {
   def getPages(name: String): Future[List[String]] = {
     getByName(name).map{categories => categories.map{_.page}}
   }
+
 }
