@@ -4,5 +4,5 @@ import com.websudos.phantom.connectors.{KeySpace, SimpleConnector}
 import com.websudos.phantom.dsl._
 
 trait Connector extends SimpleConnector {
-  implicit val keySpace: KeySpace = new KeySpace("phantom_demo")
+  implicit val keySpace: KeySpace = new KeySpace("nerpedia")
 }

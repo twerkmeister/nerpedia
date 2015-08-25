@@ -29,11 +29,13 @@ object BuildCategoryIndex extends Connector {
     val parser = new WikiXmlPullParser
     val parsed = parser.parseToIterator(conf.wikiFileName())
 
+    val start = System.currentTimeMillis()
+
     val source = Source(() => parsed)
 
     source
-      .map{CategoryExtractor}
-      .mapAsync(10) { page =>
+      .mapAsyncUnordered(5){page => Future(CategoryExtractor(page))}
+      .mapAsyncUnordered(10) { page =>
         page.revision.categories match {
           case Some(categories) =>
             Pages.store(Page(page.title, categories)).map{_ => page}
@@ -41,8 +43,10 @@ object BuildCategoryIndex extends Connector {
             logger.error(s"failed to extract categories from ${page.title}")
             Future.failed(throw new IllegalStateException(s"Failed to extract categories from ${page.title}"))
         }
-      }.runForeach { page =>
-        println(s"processed ${page.title}")
+      }.runFold(0){ case (counter, _) =>
+        if (counter % 1000 == 0)
+          logger.error(s"Processed $counter pages. Took ${(System.currentTimeMillis() - start) / 1000}s")
+        counter + 1
     }.andThen{
       case _ =>
         session.getCluster.close()
